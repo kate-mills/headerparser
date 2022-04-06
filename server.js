@@ -25,9 +25,21 @@ app.get("/api/hello", function (req, res) {
   res.json({greeting: 'hello API'});
 });
 
-app.get("/api/whoami", (req, res)=> {
-  return res.json({ ipaddress: "", language: "", software: "" })
+app.get("/api/whoami", parseIpMiddleware, (req, res) => {
+  let ipaddress = req.parsedIp || ""
+  let language = req.headers['accept-language'] || ""
+  let software = req.headers['user-agent'] || ""
+  return res.json({ ipaddress, language, software })
 })
+
+
+function parseIpMiddleware(req, res, next) {
+  req.parsedIp = req.headers['x-forwarded-for']
+    ? req.headers['x-forwarded-for'].split(',').shift()
+    : req.socket ? req.socket.remoteAddress : ""
+
+  next()
+}
 
 // listen for requests :)
 var listener = app.listen(process.env.PORT || 3000, function () {
